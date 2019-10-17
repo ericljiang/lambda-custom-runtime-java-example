@@ -1,0 +1,4 @@
+#!/bin/sh
+rootdir="${LAMBDA_TASK_ROOT:-.}"
+cd $rootdir
+./gradlew run
