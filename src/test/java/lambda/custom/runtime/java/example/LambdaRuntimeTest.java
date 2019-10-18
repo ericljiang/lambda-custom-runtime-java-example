@@ -6,9 +6,9 @@ package lambda.custom.runtime.java.example;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public class AppTest {
+public class LambdaRuntimeTest {
     @Test public void testAppHasAGreeting() {
-        App classUnderTest = new App();
+        LambdaRuntime classUnderTest = new LambdaRuntime();
         assertNotNull("app should have a greeting", classUnderTest.getGreeting());
     }
 }

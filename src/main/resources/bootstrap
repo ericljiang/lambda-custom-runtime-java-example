@@ -1,4 +1,6 @@
 #!/bin/sh
+echo "Bootstrapping..."
 rootdir="${LAMBDA_TASK_ROOT:-.}"
 cd $rootdir
-./gradlew run
+ls -lrt
+./runtime

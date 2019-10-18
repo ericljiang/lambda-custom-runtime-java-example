@@ -13,7 +13,9 @@ plugins {
     // Apply the application plugin to add support for building an application
     id 'application'
 
-    id "io.freefair.lombok" version "4.1.2"
+    id 'io.freefair.lombok' version '4.1.2'
+
+    id 'com.palantir.graal' version '0.6.0-25-g2b2309b'
 }
 
 repositories {
@@ -26,21 +28,30 @@ dependencies {
     // This dependency is found on compile classpath of this component and consumers.
     implementation 'com.amazonaws:aws-lambda-java-core:1.2.0'
     implementation 'com.google.guava:guava:27.0.1-jre'
-    implementation 'org.apache.logging.log4j:log4j-api:2.12.1'
-    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.12.1'
     implementation 'org.slf4j:slf4j-api:1.7.28'
+    implementation 'org.slf4j:slf4j-simple:1.7.28'
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
 }
 
+graal {
+    mainClass 'lambda.custom.runtime.java.example.LambdaRuntime'
+    outputName 'runtime'
+    option '--no-fallback'
+    option '--enable-url-protocols=http'
+}
+
 // https://docs.aws.amazon.com/lambda/latest/dg/create-deployment-pkg-zip-java.html
 task buildZip(type: Zip) {
-    from compileJava
-    from processResources
-    into('lib') {
-        from configurations.runtimeClasspath
+    // from compileJava
+    from nativeImage
+    from processResources {
+        include 'bootstrap'
     }
+    // into('lib') {
+    //     from configurations.runtimeClasspath
+    // }
 }
 
 build.dependsOn buildZip
@@ -49,4 +60,4 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 // Define the main class for the application
-mainClassName = 'lambda.custom.runtime.java.example.App'
+mainClassName = 'lambda.custom.runtime.java.example.LambdaRuntime'
