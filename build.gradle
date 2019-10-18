@@ -12,6 +12,8 @@ plugins {
 
     // Apply the application plugin to add support for building an application
     id 'application'
+
+    id "io.freefair.lombok" version "4.1.2"
 }
 
 repositories {
@@ -23,10 +25,26 @@ repositories {
 dependencies {
     // This dependency is found on compile classpath of this component and consumers.
     implementation 'com.google.guava:guava:27.0.1-jre'
+    implementation 'com.amazonaws:aws-lambda-java-core:1.2.0'
+    implementation 'com.amazonaws:aws-lambda-java-events:2.2.6'
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
 }
+
+// https://docs.aws.amazon.com/lambda/latest/dg/create-deployment-pkg-zip-java.html
+task buildZip(type: Zip) {
+    from compileJava
+    from processResources
+    into('lib') {
+        from configurations.runtimeClasspath
+    }
+}
+
+build.dependsOn buildZip
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 // Define the main class for the application
 mainClassName = 'lambda.custom.runtime.java.example.App'
