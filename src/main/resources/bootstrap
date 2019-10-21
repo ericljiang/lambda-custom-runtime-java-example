@@ -2,5 +2,4 @@
 echo "Bootstrapping..."
 rootdir="${LAMBDA_TASK_ROOT:-.}"
 cd $rootdir
-ls -lrt
 ./runtime

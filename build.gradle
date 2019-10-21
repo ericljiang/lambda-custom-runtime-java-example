@@ -40,18 +40,18 @@ graal {
     outputName 'runtime'
     option '--no-fallback'
     option '--enable-url-protocols=http'
+    option '-Djava.net.preferIPv4Stack=true'
 }
 
-// https://docs.aws.amazon.com/lambda/latest/dg/create-deployment-pkg-zip-java.html
 task buildZip(type: Zip) {
-    // from compileJava
     from nativeImage
     from processResources {
         include 'bootstrap'
     }
-    // into('lib') {
-    //     from configurations.runtimeClasspath
-    // }
+}
+
+task buildDocker(type: Exec) {
+    commandLine './buildDocker.sh'
 }
 
 build.dependsOn buildZip
