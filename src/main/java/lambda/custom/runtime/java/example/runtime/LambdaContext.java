@@ -1,4 +1,4 @@
-package lambda.custom.runtime.java.example;
+package lambda.custom.runtime.java.example.runtime;
 
 import com.amazonaws.services.lambda.runtime.ClientContext;
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
@@ -7,11 +7,13 @@ import com.amazonaws.services.lambda.runtime.LambdaLogger;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NonNull;
 
 @Builder
 @Getter
 public class LambdaContext implements Context {
 
+    @NonNull
     private final String awsRequestId;
 
     private final String logGroupName;

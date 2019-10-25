@@ -16,6 +16,10 @@ plugins {
     id 'io.freefair.lombok' version '4.1.2'
 
     id 'com.palantir.graal' version '0.6.0-25-g2b2309b'
+
+    id 'com.adarshr.test-logger' version '2.0.0'
+
+    id 'jacoco'
 }
 
 repositories {
@@ -27,20 +31,22 @@ repositories {
 dependencies {
     // This dependency is found on compile classpath of this component and consumers.
     implementation 'com.amazonaws:aws-lambda-java-core:1.2.0'
-    implementation 'com.google.guava:guava:27.0.1-jre'
+    implementation 'com.google.guava:guava:28.1-jre'
     implementation 'org.slf4j:slf4j-api:1.7.28'
     implementation 'org.slf4j:slf4j-simple:1.7.28'
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
+    testImplementation 'org.easymock:easymock:4.0.2'
 }
 
 graal {
-    mainClass 'lambda.custom.runtime.java.example.LambdaRuntime'
+    mainClass 'lambda.custom.runtime.java.example.Main'
     outputName 'runtime'
     option '--no-fallback'
     option '--enable-url-protocols=http'
     option '-Djava.net.preferIPv4Stack=true'
+    option '-H:+ReportExceptionStackTraces'
 }
 
 task buildZip(type: Zip) {
@@ -56,8 +62,29 @@ task buildDocker(type: Exec) {
 
 build.dependsOn buildZip
 
+jacocoTestCoverageVerification {
+  violationRules {
+    rule {
+      limit {
+        minimum = 0.8
+      }
+    }
+  }
+}
+
+task printTestReportLocation {
+    doLast {
+        println "Unit test report: build/reports/tests/test/index.html"
+        println "Coverage report: build/reports/jacoco/test/html/index.html"
+    }
+}
+
+test.finalizedBy jacocoTestReport
+jacocoTestReport.finalizedBy jacocoTestCoverageVerification
+jacocoTestReport.finalizedBy printTestReportLocation
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 // Define the main class for the application
-mainClassName = 'lambda.custom.runtime.java.example.LambdaRuntime'
+mainClassName = 'lambda.custom.runtime.java.example.Main'
