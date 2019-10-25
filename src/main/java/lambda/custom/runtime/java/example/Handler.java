@@ -6,14 +6,15 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class Handler implements RequestHandler<Request, Response> {
+public class Handler implements RequestHandler<String, String> {
 
     @Override
-    public Response handleRequest(Request input, Context context) {
+    public String handleRequest(String input, Context context) {
         log.info("Received request.");
-        return Response.builder()
-                .message("Hello world")
-                .build();
+        // return Response.builder()
+        //         .message("Hello world")
+        //         .build();
+        return "Hello world";
     }
 
 }
