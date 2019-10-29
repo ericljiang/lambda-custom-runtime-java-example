@@ -11,7 +11,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import org.easymock.EasyMockSupport;
 
 public class LambdaRuntimeTest extends EasyMockSupport {
-    @Test public void postsInitializationError() throws LambdaRuntimeError {
+    @Test
+    public void postsInitializationError() throws LambdaRuntimeError {
         final LambdaRuntimeInterface runtimeInterface = mock(LambdaRuntimeInterface.class);
         final RequestHandler<String, String> requestHandler = mock(RequestHandler.class);
         final LambdaInvocationPoller lambdaInvocationPoller = mock(LambdaInvocationPoller.class);

@@ -22,7 +22,7 @@ public class LambdaRuntimeInterfaceClient implements LambdaRuntimeInterface {
     @Override
     public LambdaInvocation getNextInvocation() throws LambdaRuntimeError {
         try {
-            final URL url = new URL(String.format("http://%s/2018-06-01/runtime/invocation/next", runtimeApiEndpoint));
+            final URL url = new URL(String.format("%s/2018-06-01/runtime/invocation/next", runtimeApiEndpoint));
             final HttpURLConnection httpClient = (HttpURLConnection) url.openConnection();
             httpClient.setRequestMethod("GET");
 
@@ -53,7 +53,7 @@ public class LambdaRuntimeInterfaceClient implements LambdaRuntimeInterface {
     @Override
     public void postInvocationResponse(String awsRequestId, String invocationResponse) throws LambdaRuntimeError {
         try {
-            final URL url = new URL(String.format("http://%s/2018-06-01/runtime/invocation/%s/response",
+            final URL url = new URL(String.format("%s/2018-06-01/runtime/invocation/%s/response",
                     runtimeApiEndpoint, awsRequestId));
             sendPost(url, invocationResponse);
         } catch (IOException e) {

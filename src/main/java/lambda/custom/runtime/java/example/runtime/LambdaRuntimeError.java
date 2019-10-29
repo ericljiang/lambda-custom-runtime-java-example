@@ -11,8 +11,4 @@ public class LambdaRuntimeError extends Exception {
     public LambdaRuntimeError(String message) {
         super(message);
     }
-
-    public LambdaRuntimeError(Throwable cause) {
-        super(cause);
-    }
 }

@@ -11,7 +11,31 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import org.easymock.EasyMockSupport;
 
 public class LambdaInvocationPollerTest extends EasyMockSupport {
-    @Test public void postsInvocationErrorOnExceptionInHandler() throws LambdaRuntimeError {
+    @Test
+    public void postsInvocationResponseFromHandler() throws LambdaRuntimeError {
+        final LambdaRuntimeInterface runtimeInterface = mock(LambdaRuntimeInterface.class);
+        final RequestHandler<String, String> requestHandler = mock(RequestHandler.class);
+        final LambdaInvocationPoller lambdaInvocationPoller = LambdaInvocationPoller.builder()
+                .lambdaRuntimeInterface(runtimeInterface)
+                .build();
+
+        expect(runtimeInterface.getNextInvocation()).andReturn(LambdaInvocation.builder()
+                .invocationEvent("")
+                .context(LambdaContext.builder()
+                        .awsRequestId("")
+                        .build())
+                .build());
+        expect(requestHandler.handleRequest(anyString(), anyObject())).andReturn("response");
+        runtimeInterface.postInvocationResponse(anyString(), eq("response"));
+        expectLastCall();
+        replayAll();
+
+        lambdaInvocationPoller.pollAndHandleInvocation(requestHandler);
+        verifyAll();
+    }
+
+    @Test
+    public void postsInvocationErrorOnExceptionInHandler() throws LambdaRuntimeError {
         final LambdaRuntimeInterface runtimeInterface = mock(LambdaRuntimeInterface.class);
         final RequestHandler<String, String> requestHandler = mock(RequestHandler.class);
         final LambdaInvocationPoller lambdaInvocationPoller = LambdaInvocationPoller.builder()
