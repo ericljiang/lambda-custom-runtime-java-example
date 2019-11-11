@@ -13,10 +13,6 @@ plugins {
     // Apply the application plugin to add support for building an application
     id 'application'
 
-    id 'io.freefair.lombok' version '4.1.2'
-
-    id 'com.palantir.graal' version '0.6.0-25-g2b2309b'
-
     id 'com.adarshr.test-logger' version '2.0.0'
 
     id 'jacoco'
@@ -29,6 +25,10 @@ repositories {
 }
 
 dependencies {
+    annotationProcessor 'org.projectlombok:lombok:1.18.10'
+
+    compileOnly 'org.projectlombok:lombok:1.18.10'
+
     // This dependency is found on compile classpath of this component and consumers.
     implementation 'com.amazonaws:aws-lambda-java-core:1.2.0'
     implementation 'com.google.guava:guava:28.1-jre'
@@ -42,27 +42,11 @@ dependencies {
     testImplementation 'org.easymock:easymock:4.0.2'
 }
 
-graal {
-    mainClass 'lambda.custom.runtime.java.example.Main'
-    outputName 'runtime'
-    option '--no-fallback'
-    option '--enable-url-protocols=http'
-    option '-Djava.net.preferIPv4Stack=true'
-    option '-H:+ReportExceptionStackTraces'
-}
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
-task buildZip(type: Zip) {
-    from nativeImage
-    from processResources {
-        include 'bootstrap'
-    }
-}
-
-task buildDocker(type: Exec) {
-    commandLine './buildDocker.sh'
-}
-
-build.dependsOn buildDocker
+// Define the main class for the application
+mainClassName = 'lambda.custom.runtime.java.example.Main'
 
 jacocoTestCoverageVerification {
   violationRules {
@@ -74,6 +58,27 @@ jacocoTestCoverageVerification {
   }
 }
 
+task nativeImage(type: JavaExec) {
+    workingDir = new File(buildDir, libsDirName)
+    classpath = sourceSets.main.runtimeClasspath
+    main = project.mainClassName
+    executable = '/opt/graalvm-ce-19.2.1/bin/native-image'
+    jvmArgs '--enable-http', '-H:+ReportExceptionStackTraces', '--no-fallback'
+    args 'runtime'
+    outputs.file(new File(workingDir, 'runtime'))
+}
+
+task packageLambda(type: Zip) {
+    from nativeImage
+    from processResources {
+        include 'bootstrap'
+    }
+}
+
+task buildDocker(type: Exec) {
+    commandLine './buildDocker.sh'
+}
+
 task printTestReportLocation {
     doLast {
         println "Unit test report: build/reports/tests/test/index.html"
@@ -81,12 +86,7 @@ task printTestReportLocation {
     }
 }
 
+buildDocker.dependsOn classes
 test.finalizedBy jacocoTestReport
 jacocoTestReport.finalizedBy jacocoTestCoverageVerification
 jacocoTestReport.finalizedBy printTestReportLocation
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-// Define the main class for the application
-mainClassName = 'lambda.custom.runtime.java.example.Main'
