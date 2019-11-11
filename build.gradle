@@ -62,7 +62,7 @@ task nativeImage(type: JavaExec) {
     workingDir = new File(buildDir, libsDirName)
     classpath = sourceSets.main.runtimeClasspath
     main = project.mainClassName
-    executable = '/opt/graalvm-ce-19.2.1/bin/native-image'
+    executable = new File(System.getenv('GRAALVM_HOME'), 'bin/native-image')
     jvmArgs '--enable-http', '-H:+ReportExceptionStackTraces', '--no-fallback'
     args 'runtime'
     outputs.file(new File(workingDir, 'runtime'))
