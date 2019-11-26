@@ -16,6 +16,8 @@ plugins {
     id 'com.adarshr.test-logger' version '2.0.0'
 
     id 'jacoco'
+
+    id 'checkstyle'
 }
 
 repositories {
@@ -56,6 +58,10 @@ jacocoTestCoverageVerification {
       }
     }
   }
+}
+
+checkstyle {
+    toolVersion '8.26'
 }
 
 task nativeImage(type: JavaExec) {

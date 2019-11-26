@@ -2,6 +2,7 @@ package lambda.custom.runtime.java.example;
 
 import java.util.Optional;
 
+import com.amazonaws.services.lambda.runtime.Context;
 import lambda.custom.runtime.java.example.runtime.LambdaRuntime;
 import lambda.custom.runtime.java.example.runtime.LambdaRuntimeError;
 import lambda.custom.runtime.java.example.runtime.LambdaRuntimeFactory;
@@ -15,7 +16,9 @@ public class Main {
                 .orElseThrow(() -> new RuntimeException("Environment variable 'AWS_LAMBDA_RUNTIME_API' is not set."));
         final LambdaRuntime runtime = LambdaRuntimeFactory.createLambdaRuntime(runtimeApiDomain);
         try {
-            runtime.initialize(new Handler());
+            runtime.initialize((Integer i, Context context) -> i + 1,
+                    (req) -> Integer.valueOf(req),
+                    (res) -> res.toString());
         } catch (LambdaRuntimeError e) {
             log.error("Unhandled exception", e);
         }
