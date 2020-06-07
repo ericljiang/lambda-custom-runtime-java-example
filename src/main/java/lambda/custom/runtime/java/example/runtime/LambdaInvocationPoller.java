@@ -30,24 +30,27 @@ public class LambdaInvocationPoller {
             final String serializedResponse = responseSerializer.serialize(response);
             this.lambdaRuntimeInterface.postInvocationResponse(awsRequestId, serializedResponse);
         } catch (LambdaInvocationError e) {
+            log.error("Encountered exception while invoking handler function.", e);
             this.lambdaRuntimeInterface.postInvocationError(awsRequestId, e);
         }
     }
 
     /**
-     * Invokes the supplied handler and wraps any thrown exception in a {@link LambdaInvocationError}.
+     * Invokes the supplied handler and wraps any thrown exception in a
+     * {@link LambdaInvocationError}.
      *
-     * @param <I> The type for request objects accepted by the requestHandler
-     * @param <O> The type for response objects returned by the requestHandler
+     * @param <I>            The type for request objects accepted by the
+     *                       requestHandler
+     * @param <O>            The type for response objects returned by the
+     *                       requestHandler
      * @param requestHandler The Lambda Function to invoke
-     * @param request The input for the Lambda Function
-     * @param context The Lambda execution environment context object.
+     * @param request        The input for the Lambda Function
+     * @param context        The Lambda execution environment context object.
      * @return The Lambda Function output
      * @throws LambdaInvocationError
-     * @throws LambdaRuntimeError
      */
     private <I, O> O invoke(RequestHandler<I, O> requestHandler, I request, LambdaContext context)
-            throws LambdaInvocationError, LambdaRuntimeError {
+            throws LambdaInvocationError {
         try {
             return requestHandler.handleRequest(request, context);
         } catch (RuntimeException e) {

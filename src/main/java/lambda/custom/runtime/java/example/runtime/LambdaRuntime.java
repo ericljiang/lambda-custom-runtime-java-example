@@ -2,12 +2,18 @@ package lambda.custom.runtime.java.example.runtime;
 
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
+import lambda.custom.runtime.java.example.runtime.serialization.DefaultSerializer;
 import lambda.custom.runtime.java.example.runtime.serialization.RequestDeserializer;
 import lambda.custom.runtime.java.example.runtime.serialization.ResponseSerializer;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * The {@link LambdaRuntime} polls for incoming requests and invokes the
+ * provided {@link RequestHandler}, optionally parsing incoming requests and
+ * outgoing responses if configured.
+ */
 @Slf4j
 @Builder
 public class LambdaRuntime {
@@ -18,23 +24,54 @@ public class LambdaRuntime {
     @NonNull
     private final LambdaInvocationPoller lambdaInvocationPoller;
 
+    @NonNull
+    private final DefaultSerializer defaultSerializer;
+
+    /**
+     * Assign a {@link RequestHandler} to handle requests without any request
+     * serialization or response deserialization.
+     *
+     * @param requestHandler object that processes requests and returns a response
+     */
     public void initialize(RequestHandler<String, String> requestHandler) throws LambdaRuntimeError {
         initialize(requestHandler, s -> s, s -> s);
     }
 
-    public <I> void initialize(RequestHandler<I, String> requestHandler,
-            RequestDeserializer<I> requestDeserializer) throws LambdaRuntimeError {
-        initialize(requestHandler, requestDeserializer, s -> s);
+    /**
+     * Assign a {@link RequestHandler} to handle requests using default serializtion
+     * for requests and responses.
+     *
+     * @param <I>            Type of requests
+     * @param <O>            Type of responses
+     * @param requestHandler Object that processes requests and returns a response
+     * @param inputClass     Class of requests
+     * @param outputClass    Class of responses
+     */
+    public <I, O> void initialize(RequestHandler<I, O> requestHandler, Class<I> inputClass, Class<O> outputClass) {
+        initialize(
+                requestHandler,
+                i -> defaultSerializer.deserialize(i, inputClass),
+                o -> defaultSerializer.serialize(o, outputClass));
     }
 
-    public <O> void initialize(RequestHandler<String, O> requestHandler,
-            ResponseSerializer<O> responseSerializer) throws LambdaRuntimeError {
-        initialize(requestHandler, s -> s, responseSerializer);
-    }
-
-    public <I, O> void initialize(RequestHandler<I, O> requestHandler,
+    /**
+     * Assign a {@link RequestHandler} to process incoming requests using the
+     * specified {@link RequestDeserializer} to parse requests and
+     * {@link ResponseSerializer} to package responses.
+     *
+     * @param <I>                 Type of requests
+     * @param <O>                 Type of responses
+     * @param requestHandler      Object that processes requests and returns a
+     *                            response
+     * @param requestDeserializer Object that parses incoming requests to type
+     *                            {@link I}
+     * @param responseSerializer  Object that serializes outgoing requests from type
+     *                            {@link O}
+     */
+    public <I, O> void initialize(
+            RequestHandler<I, O> requestHandler,
             RequestDeserializer<I> requestDeserializer,
-            ResponseSerializer<O> responseSerializer) throws LambdaRuntimeError {
+            ResponseSerializer<O> responseSerializer) {
         try {
             while (true) {
                 this.lambdaInvocationPoller.pollAndHandleInvocation(
@@ -42,10 +79,25 @@ public class LambdaRuntime {
                         requestDeserializer,
                         responseSerializer);
             }
-        } catch (LambdaRuntimeError e) {
+        } catch (LambdaRuntimeError | RuntimeException e) {
             log.error("Error occured during runtime initialization. Attempting to post to runtime interface.", e);
-            lambdaRuntimeInterface.postInitializationError(e);
-            log.info("Successfully posted initialization error to runtime interface. Exiting.");
+            attemptPostInitializationError(e);
+        } finally {
+            log.info("Exiting Lambda runtime.");
+        }
+    }
+
+    /**
+     * Posts an initialization error to the Lambda Runtime API. If the error
+     * reporting fails, logs an error and fails silently.
+     * @param initializationError
+     */
+    private void attemptPostInitializationError(Throwable t) {
+        try {
+            this.lambdaRuntimeInterface.postInitializationError(t);
+            log.info("Successfully posted initialization error to runtime interface.");
+        } catch (LambdaRuntimeError | RuntimeException e) {
+            log.error("Failed while posting initialization error to Lambda Runtime API", e);
         }
     }
 }

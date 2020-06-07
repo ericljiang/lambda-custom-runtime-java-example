@@ -56,19 +56,27 @@ public class LambdaRuntimeInterfaceClient implements LambdaRuntimeInterface {
             final URL url = new URL(String.format("%s/2018-06-01/runtime/invocation/%s/response",
                     runtimeApiEndpoint, awsRequestId));
             sendPost(url, invocationResponse);
-        } catch (IOException e) {
-            throw new LambdaRuntimeError("Error while getting invocation from Lambda runtime API.", e);
+        } catch (IOException | RuntimeException e) {
+            throw new LambdaRuntimeError("Error while posting invocation response to Lambda runtime API.", e);
         }
     }
 
     @Override
     public void postInvocationError(String awsRequestId, Throwable error) throws LambdaRuntimeError {
-        throw new UnsupportedOperationException();
+        try {
+            throw new UnsupportedOperationException();
+        } catch (RuntimeException e) {
+            throw new LambdaRuntimeError("Error while posting invocation error to Lambda runtime API.", e);
+        }
     }
 
     @Override
     public void postInitializationError(Throwable error) throws LambdaRuntimeError {
-        throw new UnsupportedOperationException();
+        try {
+            throw new UnsupportedOperationException();
+        } catch (RuntimeException e) {
+            throw new LambdaRuntimeError("Error while posting invocation error to Lambda runtime API.", e);
+        }
     }
 
     private void sendPost(URL url, String data) throws IOException {

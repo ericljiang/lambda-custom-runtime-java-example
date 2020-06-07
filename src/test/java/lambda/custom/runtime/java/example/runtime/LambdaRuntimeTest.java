@@ -1,19 +1,25 @@
 package lambda.custom.runtime.java.example.runtime;
 
+import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expectLastCall;
+import static org.junit.Assert.assertEquals;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.google.gson.Gson;
 
+import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import lambda.custom.runtime.java.example.runtime.serialization.DefaultSerializer;
 import lambda.custom.runtime.java.example.runtime.serialization.RequestDeserializer;
 import lambda.custom.runtime.java.example.runtime.serialization.ResponseSerializer;
 
@@ -23,6 +29,7 @@ public class LambdaRuntimeTest extends EasyMockSupport {
     private RequestDeserializer<String> requestDeserializer;
     private ResponseSerializer<String> responseSerializer;
     private LambdaInvocationPoller lambdaInvocationPoller;
+    private DefaultSerializer defaultSerializer;
     private LambdaRuntime runtime;
 
     @Before
@@ -32,62 +39,36 @@ public class LambdaRuntimeTest extends EasyMockSupport {
         this.requestDeserializer = s -> s;
         this.responseSerializer = s -> s;
         this.lambdaInvocationPoller = mock(LambdaInvocationPoller.class);
+        this.defaultSerializer = DefaultSerializer.builder().gson(new Gson()).build();
         this.runtime = LambdaRuntime.builder()
                 .lambdaRuntimeInterface(this.runtimeInterface)
                 .lambdaInvocationPoller(this.lambdaInvocationPoller)
+                .defaultSerializer(this.defaultSerializer)
                 .build();
     }
 
     @Test
-    public void postsInitializationError() throws LambdaRuntimeError {
+    public void postsInitializationErrorWithNoSerialization() throws LambdaRuntimeError {
+        final Capture<RequestDeserializer<String>> requestDeserializer = EasyMock.newCapture();
+        final Capture<ResponseSerializer<String>> responseSerializer = EasyMock.newCapture();
         final LambdaRuntimeError error = new LambdaRuntimeError("");
         this.lambdaInvocationPoller.pollAndHandleInvocation(
                 eq(this.requestHandler),
-                EasyMock.<RequestDeserializer<String>>anyObject(),
-                EasyMock.<ResponseSerializer<String>>anyObject());
+                capture(requestDeserializer),
+                capture(responseSerializer));
         expectLastCall().andThrow(error);
         this.runtimeInterface.postInitializationError(error);
         expectLastCall();
         replayAll();
 
         this.runtime.initialize(this.requestHandler);
+        assertEquals("request", requestDeserializer.getValue().deserialize("request"));
+        assertEquals("response", responseSerializer.getValue().serialize("response"));
         verifyAll();
     }
 
     @Test
-    public void postsInitializationErrorWithCustomRequest() throws LambdaRuntimeError {
-        final LambdaRuntimeError error = new LambdaRuntimeError("");
-        this.lambdaInvocationPoller.pollAndHandleInvocation(
-                eq(this.requestHandler),
-                eq(this.requestDeserializer),
-                EasyMock.<ResponseSerializer<String>>anyObject());
-        expectLastCall().andThrow(error);
-        this.runtimeInterface.postInitializationError(error);
-        expectLastCall();
-        replayAll();
-
-        this.runtime.initialize(this.requestHandler, this.requestDeserializer);
-        verifyAll();
-    }
-
-    @Test
-    public void postsInitializationErrorWithCustomResponse() throws LambdaRuntimeError {
-        final LambdaRuntimeError error = new LambdaRuntimeError("");
-        this.lambdaInvocationPoller.pollAndHandleInvocation(
-                eq(this.requestHandler),
-                EasyMock.<RequestDeserializer<String>>anyObject(),
-                eq(this.responseSerializer));
-        expectLastCall().andThrow(error);
-        this.runtimeInterface.postInitializationError(error);
-        expectLastCall();
-        replayAll();
-
-        this.runtime.initialize(this.requestHandler, this.responseSerializer);
-        verifyAll();
-    }
-
-    @Test
-    public void postsInitializationErrorWithCustomRequestResponse() throws LambdaRuntimeError {
+    public void postsInitializationErrorWithCustomSerialization() throws LambdaRuntimeError {
         final LambdaRuntimeError error = new LambdaRuntimeError("");
         this.lambdaInvocationPoller.pollAndHandleInvocation(
                 eq(this.requestHandler),
@@ -103,64 +84,26 @@ public class LambdaRuntimeTest extends EasyMockSupport {
     }
 
     @Test
-    public void callsLambdaInvocationPoller() throws LambdaRuntimeError {
+    public void callsLambdaInvocationPollerWithNoSerialization() throws LambdaRuntimeError {
+        final Capture<RequestDeserializer<String>> requestDeserializer = EasyMock.newCapture();
+        final Capture<ResponseSerializer<String>> responseSerializer = EasyMock.newCapture();
         this.lambdaInvocationPoller.pollAndHandleInvocation(
                 eq(this.requestHandler),
-                EasyMock.<RequestDeserializer<String>>anyObject(),
-                EasyMock.<ResponseSerializer<String>>anyObject());
+                capture(requestDeserializer),
+                capture(responseSerializer));
         expectLastCall().atLeastOnce();
         replayAll();
 
-        runWithTimeout(() -> {
-            try {
-                this.runtime.initialize(this.requestHandler);
-            } catch (LambdaRuntimeError e) {
-                throw new RuntimeException(e);
-            }
+        tryRunWithTimeout(() -> {
+            this.runtime.initialize(this.requestHandler);
         }, 1, TimeUnit.SECONDS);
+        assertEquals("request", requestDeserializer.getValue().deserialize("request"));
+        assertEquals("response", responseSerializer.getValue().serialize("response"));
         verifyAll();
     }
 
     @Test
-    public void callsLambdaInvocationPollerWithCustomRequest() throws LambdaRuntimeError {
-        this.lambdaInvocationPoller.pollAndHandleInvocation(
-                eq(this.requestHandler),
-                eq(this.requestDeserializer),
-                EasyMock.<ResponseSerializer<String>>anyObject());
-        expectLastCall().atLeastOnce();
-        replayAll();
-
-        runWithTimeout(() -> {
-            try {
-                this.runtime.initialize(this.requestHandler, this.requestDeserializer);
-            } catch (LambdaRuntimeError e) {
-                throw new RuntimeException(e);
-            }
-        }, 1, TimeUnit.SECONDS);
-        verifyAll();
-    }
-
-    @Test
-    public void callsLambdaInvocationPollerWithCustomResponse() throws LambdaRuntimeError {
-        this.lambdaInvocationPoller.pollAndHandleInvocation(
-                eq(this.requestHandler),
-                EasyMock.<RequestDeserializer<String>>anyObject(),
-                eq(this.responseSerializer));
-        expectLastCall().atLeastOnce();
-        replayAll();
-
-        runWithTimeout(() -> {
-            try {
-                this.runtime.initialize(this.requestHandler, this.responseSerializer);
-            } catch (LambdaRuntimeError e) {
-                throw new RuntimeException(e);
-            }
-        }, 1, TimeUnit.SECONDS);
-        verifyAll();
-    }
-
-    @Test
-    public void callsLambdaInvocationPollerWithCustomRequestResponse() throws LambdaRuntimeError {
+    public void callsLambdaInvocationPollerWithCustomSerialization() throws LambdaRuntimeError {
         this.lambdaInvocationPoller.pollAndHandleInvocation(
                 eq(this.requestHandler),
                 eq(this.requestDeserializer),
@@ -168,12 +111,8 @@ public class LambdaRuntimeTest extends EasyMockSupport {
         expectLastCall().atLeastOnce();
         replayAll();
 
-        runWithTimeout(() -> {
-            try {
-                this.runtime.initialize(this.requestHandler, this.requestDeserializer, this.responseSerializer);
-            } catch (LambdaRuntimeError e) {
-                throw new RuntimeException(e);
-            }
+        tryRunWithTimeout(() -> {
+            this.runtime.initialize(this.requestHandler, this.requestDeserializer, this.responseSerializer);
         }, 1, TimeUnit.SECONDS);
         verifyAll();
     }
@@ -189,6 +128,16 @@ public class LambdaRuntimeTest extends EasyMockSupport {
         } finally {
             executorService.shutdownNow();
         }
+    }
+
+    private void tryRunWithTimeout(ThrowingRunnable runnable, long timeout, TimeUnit unit) {
+        runWithTimeout(() -> {
+            try {
+                runnable.run();
+            } catch (Exception e) {
+                Assert.fail(e.getMessage());
+            }
+        }, timeout, unit);
     }
 
     interface ThrowingRunnable {
