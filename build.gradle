@@ -69,6 +69,25 @@ checkstyleMain {
     source = fileTree('src/main/java')
 }
 
+def srcDelomboked = 'build/src-delomboked'
+
+task delombok {
+    inputs.files file('src/main/java')
+    outputs.dir file(srcDelomboked)
+    description 'Delomboks the source code'
+    doLast {
+        ant.taskdef(classname: 'lombok.delombok.ant.Tasks$Delombok', classpath: configurations.annotationProcessor.asPath, name: 'delombok')
+        ant.mkdir(dir: srcDelomboked)
+        ant.delombok(verbose: 'true', encoding: 'UTF-8', to: srcDelomboked, from: 'src/main/java')
+    }
+}
+
+javadoc {
+    dependsOn delombok
+    source = srcDelomboked
+    classpath = sourceSets.main.compileClasspath
+}
+
 graal {
     mainClass project.mainClassName
     outputName "$buildDir/$libsDirName/runtime"
@@ -87,6 +106,7 @@ task packageLambda(type: Zip) {
 }
 
 task buildDocker(type: Exec) {
+    dependsOn classes
     commandLine './buildDocker.sh'
 }
 
@@ -97,7 +117,6 @@ task printTestReportLocation {
     }
 }
 
-buildDocker.dependsOn classes
 test.finalizedBy jacocoTestReport
 jacocoTestReport.finalizedBy jacocoTestCoverageVerification
 jacocoTestReport.finalizedBy printTestReportLocation
