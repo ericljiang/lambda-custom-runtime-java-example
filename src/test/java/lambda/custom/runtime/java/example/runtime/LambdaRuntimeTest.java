@@ -10,7 +10,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.google.gson.Gson;
 
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -19,7 +18,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import lambda.custom.runtime.java.example.runtime.serialization.DefaultSerializer;
+import lambda.custom.runtime.java.example.runtime.serialization.GenericSerializationStrategy;
 import lambda.custom.runtime.java.example.runtime.serialization.RequestDeserializer;
 import lambda.custom.runtime.java.example.runtime.serialization.ResponseSerializer;
 
@@ -29,7 +28,7 @@ public class LambdaRuntimeTest extends EasyMockSupport {
     private RequestDeserializer<String> requestDeserializer;
     private ResponseSerializer<String> responseSerializer;
     private LambdaInvocationPoller lambdaInvocationPoller;
-    private DefaultSerializer defaultSerializer;
+    private GenericSerializationStrategy defaultSerializationStrategy;
     private LambdaRuntime runtime;
 
     @Before
@@ -39,11 +38,11 @@ public class LambdaRuntimeTest extends EasyMockSupport {
         this.requestDeserializer = s -> s;
         this.responseSerializer = s -> s;
         this.lambdaInvocationPoller = mock(LambdaInvocationPoller.class);
-        this.defaultSerializer = DefaultSerializer.builder().gson(new Gson()).build();
+        this.defaultSerializationStrategy = mock(GenericSerializationStrategy.class);
         this.runtime = LambdaRuntime.builder()
                 .lambdaRuntimeInterface(this.runtimeInterface)
                 .lambdaInvocationPoller(this.lambdaInvocationPoller)
-                .defaultSerializer(this.defaultSerializer)
+                .defaultSerializationStrategy(this.defaultSerializationStrategy)
                 .build();
     }
 

@@ -2,7 +2,7 @@ package lambda.custom.runtime.java.example.runtime;
 
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
-import lambda.custom.runtime.java.example.runtime.serialization.DefaultSerializer;
+import lambda.custom.runtime.java.example.runtime.serialization.GenericSerializationStrategy;
 import lambda.custom.runtime.java.example.runtime.serialization.RequestDeserializer;
 import lambda.custom.runtime.java.example.runtime.serialization.ResponseSerializer;
 import lombok.Builder;
@@ -25,7 +25,7 @@ public class LambdaRuntime {
     private final LambdaInvocationPoller lambdaInvocationPoller;
 
     @NonNull
-    private final DefaultSerializer defaultSerializer;
+    private final GenericSerializationStrategy defaultSerializationStrategy;
 
     /**
      * Assign a {@link RequestHandler} to handle requests without any request
@@ -50,8 +50,8 @@ public class LambdaRuntime {
     public <I, O> void initialize(RequestHandler<I, O> requestHandler, Class<I> inputClass, Class<O> outputClass) {
         initialize(
                 requestHandler,
-                i -> defaultSerializer.deserialize(i, inputClass),
-                o -> defaultSerializer.serialize(o, outputClass));
+                i -> defaultSerializationStrategy.deserialize(i, inputClass),
+                o -> defaultSerializationStrategy.serialize(o, outputClass));
     }
 
     /**

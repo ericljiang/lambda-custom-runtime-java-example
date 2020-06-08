@@ -7,7 +7,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapterFactory;
 
-import lambda.custom.runtime.java.example.runtime.serialization.DefaultSerializer;
+import lambda.custom.runtime.java.example.runtime.serialization.GenericSerializationStrategy;
+import lambda.custom.runtime.java.example.runtime.serialization.GsonSerializationStrategy;
 
 public class LambdaRuntimeFactory {
 
@@ -36,14 +37,14 @@ public class LambdaRuntimeFactory {
             gsonBuilder.registerTypeAdapterFactory(factory);
         }
         final Gson gson = gsonBuilder.create();
-        final DefaultSerializer defaultSerializer = DefaultSerializer.builder()
+        final GenericSerializationStrategy defaultSerializationStrategy = GsonSerializationStrategy.builder()
                 .gson(gson)
                 .build();
 
         final LambdaRuntime runtime = LambdaRuntime.builder()
                 .lambdaRuntimeInterface(lambdaRuntimeInterface)
                 .lambdaInvocationPoller(lambdaInvocationPoller)
-                .defaultSerializer(defaultSerializer)
+                .defaultSerializationStrategy(defaultSerializationStrategy)
                 .build();
         return runtime;
     }
