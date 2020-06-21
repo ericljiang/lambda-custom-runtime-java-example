@@ -1,4 +1,4 @@
-package lambda.custom.runtime.java.example.runtime;
+package lambda.custom.runtime.java.example.runtime.exception;
 
 public class LambdaInvocationError extends Exception {
 

@@ -1,6 +1,8 @@
 package lambda.custom.runtime.java.example.runtime;
 
-public interface LambdaRuntimeInterface {
+import lambda.custom.runtime.java.example.runtime.exception.LambdaRuntimeError;
+
+interface LambdaRuntimeInterface {
     LambdaInvocation getNextInvocation() throws LambdaRuntimeError;
 
     void postInvocationResponse(String awsRequestId, String invocationResponse) throws LambdaRuntimeError;

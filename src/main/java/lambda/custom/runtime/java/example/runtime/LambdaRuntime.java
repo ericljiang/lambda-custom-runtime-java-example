@@ -1,31 +1,17 @@
 package lambda.custom.runtime.java.example.runtime;
 
-import com.amazonaws.services.lambda.runtime.RequestHandler;
+import java.util.Optional;
+import java.util.ServiceLoader;
 
-import lambda.custom.runtime.java.example.runtime.serialization.GenericSerializationStrategy;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapterFactory;
+
 import lambda.custom.runtime.java.example.runtime.serialization.RequestDeserializer;
 import lambda.custom.runtime.java.example.runtime.serialization.ResponseSerializer;
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
 
-/**
- * The {@link LambdaRuntime} polls for incoming requests and invokes the
- * provided {@link RequestHandler}, optionally parsing incoming requests and
- * outgoing responses if configured.
- */
-@Slf4j
-@Builder
-public class LambdaRuntime {
-
-    @NonNull
-    private final LambdaRuntimeInterface lambdaRuntimeInterface;
-
-    @NonNull
-    private final LambdaInvocationPoller lambdaInvocationPoller;
-
-    @NonNull
-    private final GenericSerializationStrategy defaultSerializationStrategy;
+public interface LambdaRuntime {
 
     /**
      * Assign a {@link RequestHandler} to handle requests without any request
@@ -33,9 +19,7 @@ public class LambdaRuntime {
      *
      * @param requestHandler object that processes requests and returns a response
      */
-    public void initialize(RequestHandler<String, String> requestHandler) throws LambdaRuntimeError {
-        initialize(requestHandler, s -> s, s -> s);
-    }
+    void initialize(RequestHandler<String, String> requestHandler);
 
     /**
      * Assign a {@link RequestHandler} to handle requests using default serializtion
@@ -47,12 +31,7 @@ public class LambdaRuntime {
      * @param inputClass     Class of requests
      * @param outputClass    Class of responses
      */
-    public <I, O> void initialize(RequestHandler<I, O> requestHandler, Class<I> inputClass, Class<O> outputClass) {
-        initialize(
-                requestHandler,
-                i -> defaultSerializationStrategy.deserialize(i, inputClass),
-                o -> defaultSerializationStrategy.serialize(o, outputClass));
-    }
+    <I, O> void initialize(RequestHandler<I, O> requestHandler, Class<I> inputClass, Class<O> outputClass);
 
     /**
      * Assign a {@link RequestHandler} to process incoming requests using the
@@ -68,36 +47,56 @@ public class LambdaRuntime {
      * @param responseSerializer  Object that serializes outgoing requests from type
      *                            {@link O}
      */
-    public <I, O> void initialize(
+    <I, O> void initialize(
             RequestHandler<I, O> requestHandler,
             RequestDeserializer<I> requestDeserializer,
-            ResponseSerializer<O> responseSerializer) {
-        try {
-            while (true) {
-                this.lambdaInvocationPoller.pollAndHandleInvocation(
-                        requestHandler,
-                        requestDeserializer,
-                        responseSerializer);
-            }
-        } catch (LambdaRuntimeError | RuntimeException e) {
-            log.error("Error occured during runtime initialization. Attempting to post to runtime interface.", e);
-            attemptPostInitializationError(e);
-        } finally {
-            log.info("Exiting Lambda runtime.");
-        }
+            ResponseSerializer<O> responseSerializer);
+
+    /**
+     * Create an implemented instance of {@link LambdaRuntime}.
+     *
+     * @return an instance of {@link LambdaRuntime}
+     */
+    public static LambdaRuntime create() {
+        final String runtimeApiDomain = Optional.ofNullable(System.getenv("AWS_LAMBDA_RUNTIME_API"))
+                .orElseThrow(() -> new RuntimeException("Environment variable 'AWS_LAMBDA_RUNTIME_API' is not set."));
+        return create(runtimeApiDomain);
     }
 
     /**
-     * Posts an initialization error to the Lambda Runtime API. If the error
-     * reporting fails, logs an error and fails silently.
-     * @param initializationError
+     * Create an implemented instance of {@link LambdaRuntime} using a custom endpoint for the Lambda Runtime API.
+     *
+     * This method exists for testing and is not intended for production use.
+     *
+     * @param runtimeApiHost host and port of the runtime API
+     * @return an instance of {@link LambdaRuntime}
      */
-    private void attemptPostInitializationError(Throwable t) {
-        try {
-            this.lambdaRuntimeInterface.postInitializationError(t);
-            log.info("Successfully posted initialization error to runtime interface.");
-        } catch (LambdaRuntimeError | RuntimeException e) {
-            log.error("Failed while posting initialization error to Lambda Runtime API", e);
+    static LambdaRuntime create(String runtimeApiHost) {
+        final String runtimeApiEndpoint = String.format("http://%s", runtimeApiHost);
+
+        final LambdaRuntimeInterface lambdaRuntimeInterface = LambdaRuntimeInterfaceClient.builder()
+                .runtimeApiEndpoint(runtimeApiEndpoint)
+                .build();
+
+        final LambdaInvocationPoller lambdaInvocationPoller = LambdaInvocationPoller.builder()
+                .lambdaRuntimeInterface(lambdaRuntimeInterface)
+                .build();
+
+        // reference: https://immutables.github.io/json.html#type-adapter-registration
+        final GsonBuilder gsonBuilder = new GsonBuilder();
+        for (TypeAdapterFactory factory : ServiceLoader.load(TypeAdapterFactory.class)) {
+            gsonBuilder.registerTypeAdapterFactory(factory);
         }
+        final Gson gson = gsonBuilder.create();
+        final GenericSerializationStrategy defaultSerializationStrategy = GsonSerializationStrategy.builder()
+                .gson(gson)
+                .build();
+
+        final LambdaRuntime runtime = LambdaRuntimeImpl.builder()
+                .lambdaRuntimeInterface(lambdaRuntimeInterface)
+                .lambdaInvocationPoller(lambdaInvocationPoller)
+                .defaultSerializationStrategy(defaultSerializationStrategy)
+                .build();
+        return runtime;
     }
 }

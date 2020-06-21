@@ -2,6 +2,8 @@ package lambda.custom.runtime.java.example.runtime;
 
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
+import lambda.custom.runtime.java.example.runtime.exception.LambdaInvocationError;
+import lambda.custom.runtime.java.example.runtime.exception.LambdaRuntimeError;
 import lambda.custom.runtime.java.example.runtime.serialization.RequestDeserializer;
 import lambda.custom.runtime.java.example.runtime.serialization.ResponseSerializer;
 import lombok.Builder;
@@ -10,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Builder
-public class LambdaInvocationPoller {
+class LambdaInvocationPoller {
 
     @NonNull
     private final LambdaRuntimeInterface lambdaRuntimeInterface;

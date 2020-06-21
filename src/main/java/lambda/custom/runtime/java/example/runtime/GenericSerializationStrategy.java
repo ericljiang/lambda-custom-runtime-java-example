@@ -1,9 +1,9 @@
-package lambda.custom.runtime.java.example.runtime.serialization;
+package lambda.custom.runtime.java.example.runtime;
 
 /**
  * Object that serializes and deserializes values of any type.
  */
-public interface GenericSerializationStrategy {
+interface GenericSerializationStrategy {
 
     /**
      * Serialize a value of type T to a String.

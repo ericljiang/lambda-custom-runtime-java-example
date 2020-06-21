@@ -1,4 +1,4 @@
-package lambda.custom.runtime.java.example.runtime.serialization;
+package lambda.custom.runtime.java.example.runtime;
 
 import com.google.gson.Gson;
 
@@ -9,7 +9,7 @@ import lombok.NonNull;
  * {@link GenericSerializationStrategy} implementation that uses Gson to serialize and deserialize.
  */
 @Builder
-public class GsonSerializationStrategy implements GenericSerializationStrategy {
+class GsonSerializationStrategy implements GenericSerializationStrategy {
 
     @NonNull
     private final Gson gson;

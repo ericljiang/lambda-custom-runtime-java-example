@@ -11,6 +11,9 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import org.easymock.EasyMockSupport;
 import org.junit.Test;
 
+import lambda.custom.runtime.java.example.runtime.exception.LambdaInvocationError;
+import lambda.custom.runtime.java.example.runtime.exception.LambdaRuntimeError;
+
 public class LambdaInvocationPollerTest extends EasyMockSupport {
     @Test
     public void postsInvocationResponseFromHandler() throws LambdaRuntimeError {

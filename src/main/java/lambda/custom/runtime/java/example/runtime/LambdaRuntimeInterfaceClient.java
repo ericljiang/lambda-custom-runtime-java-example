@@ -8,13 +8,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.stream.Collectors;
 
+import lambda.custom.runtime.java.example.runtime.exception.LambdaRuntimeError;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Builder
-public class LambdaRuntimeInterfaceClient implements LambdaRuntimeInterface {
+class LambdaRuntimeInterfaceClient implements LambdaRuntimeInterface {
 
     @NonNull
     private final String runtimeApiEndpoint;

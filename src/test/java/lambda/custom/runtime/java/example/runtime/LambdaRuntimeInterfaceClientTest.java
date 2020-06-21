@@ -16,6 +16,8 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.junit.Test;
 
+import lambda.custom.runtime.java.example.runtime.exception.LambdaRuntimeError;
+
 public class LambdaRuntimeInterfaceClientTest extends LocalServerTestBase {
 
     @Test
@@ -33,7 +35,7 @@ public class LambdaRuntimeInterfaceClientTest extends LocalServerTestBase {
         final LambdaRuntimeInterfaceClient client = LambdaRuntimeInterfaceClient.builder()
                 .runtimeApiEndpoint(url)
                 .build();
-        
+
         final LambdaInvocation invocation = client.getNextInvocation();
         assertEquals("123", invocation.getContext().getAwsRequestId());
         assertEquals("abc", invocation.getInvocationEvent());
@@ -53,7 +55,7 @@ public class LambdaRuntimeInterfaceClientTest extends LocalServerTestBase {
         final LambdaRuntimeInterfaceClient client = LambdaRuntimeInterfaceClient.builder()
                 .runtimeApiEndpoint(url)
                 .build();
-        
+
         client.getNextInvocation();
     }
 

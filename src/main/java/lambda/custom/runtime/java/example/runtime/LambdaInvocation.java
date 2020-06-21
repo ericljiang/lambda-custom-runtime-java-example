@@ -6,7 +6,7 @@ import lombok.NonNull;
 
 @Getter
 @Builder
-public class LambdaInvocation {
+class LambdaInvocation {
 
     @NonNull
     private final LambdaContext context;

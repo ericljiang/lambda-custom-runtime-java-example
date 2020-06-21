@@ -11,7 +11,7 @@ import lombok.NonNull;
 
 @Builder
 @Getter
-public class LambdaContext implements Context {
+class LambdaContext implements Context {
 
     @NonNull
     private final String awsRequestId;
