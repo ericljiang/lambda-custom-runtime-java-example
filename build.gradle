@@ -12,12 +12,15 @@ plugins {
     id 'jacoco'
 
     id 'checkstyle'
+
+    id 'maven'
 }
 
 repositories {
     // Use jcenter for resolving your dependencies.
     // You can declare any Maven/Ivy/file repository here.
     jcenter()
+    maven { url "https://jitpack.io" }
 }
 
 dependencies {
@@ -30,14 +33,12 @@ dependencies {
 
     // This dependency is found on compile classpath of this component and consumers.
     implementation 'com.amazonaws:aws-lambda-java-core:1.2.0'
-    implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'org.slf4j:slf4j-api:1.7.28'
     implementation 'org.slf4j:slf4j-simple:1.7.28'
+    implementation 'com.github.ericljiang:aws-lambda-graalvm:0.1.0'
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
-    testImplementation 'org.apache.httpcomponents:httpclient:4.5.10'
-    testImplementation 'org.apache.httpcomponents:httpclient:4.5.10:tests'
     testImplementation 'org.easymock:easymock:4.0.2'
 }
 
@@ -67,25 +68,6 @@ checkstyle {
 // Workaround to exclude generated sources
 checkstyleMain {
     source = fileTree('src/main/java')
-}
-
-def srcDelomboked = 'build/src-delomboked'
-
-task delombok {
-    inputs.files file('src/main/java')
-    outputs.dir file(srcDelomboked)
-    description 'Delomboks the source code'
-    doLast {
-        ant.taskdef(classname: 'lombok.delombok.ant.Tasks$Delombok', classpath: configurations.annotationProcessor.asPath, name: 'delombok')
-        ant.mkdir(dir: srcDelomboked)
-        ant.delombok(verbose: 'true', encoding: 'UTF-8', to: srcDelomboked, from: 'src/main/java')
-    }
-}
-
-javadoc {
-    dependsOn delombok
-    source = srcDelomboked
-    classpath = sourceSets.main.compileClasspath
 }
 
 graal {

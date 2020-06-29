@@ -1,7 +1,7 @@
 package lambda.custom.runtime.java.example;
 
-import lambda.custom.runtime.java.example.runtime.LambdaRuntime;
 import lombok.extern.slf4j.Slf4j;
+import me.ericjiang.aws.lambda.graalvm.LambdaRuntime;
 
 @Slf4j
 public class Main {
